@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:pusher_client/pusher_client.dart';
@@ -21,24 +22,24 @@ class _MyAppState extends State<MyApp> {
     super.initState();
 
     String token = getToken();
+    String agentId = getAgentId();
 
     pusher = new PusherClient(
-      "app-key",
+      '4a9a1e03aff67ce38c56',
       PusherOptions(
-        // if local on android use 10.0.2.2
-        host: 'localhost',
-        encrypted: false,
+        cluster: 'mt1',
+        encrypted: true,
         auth: PusherAuth(
-          'http://example.com/broadcasting/auth',
+          'https://qa.api.hibot.us/api_interactions/pusher',
           headers: {
-            'Authorization': 'Bearer $token',
+            HttpHeaders.authorizationHeader: 'Bearer $token',
           },
         ),
       ),
       enableLogging: true,
     );
 
-    channel = pusher.subscribe("private-orders");
+    channel = pusher.subscribe("presence-agent-$agentId");
 
     pusher.onConnectionStateChange((state) {
       log("previousState: ${state.previousState}, currentState: ${state.currentState}");
@@ -48,16 +49,19 @@ class _MyAppState extends State<MyApp> {
       log("error: ${error.message}");
     });
 
-    channel.bind('status-update', (event) {
-      log(event.data);
+    channel.bind('conversation-updated', (event) {
+      log(event.data, name: 'conversation-updated');
     });
 
-    channel.bind('order-filled', (event) {
-      log("Order Filled Event" + event.data.toString());
+    channel.bind('messages-received', (event) {
+      log(event.data, name: 'messages-received');
     });
   }
 
-  String getToken() => "super-secret-token";
+  String getToken() =>
+      'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik5qZEJNRGxFUXpSRU4wWkdNamhHUXpZNU1EQkJNVE13TlRneU1USTRNRVEzTXpWRE9FSTBSZyJ9.eyJodHRwczovL3FhLmhpYm90LnVzLy90ZW5hbnQiOiI1ZmRiODE4NjgzN2QyOTAwMDFmZjI2NGMiLCJodHRwczovL3FhLmhpYm90LnVzLy9lbWFpbCI6InBydWViYXNzb2ZrYTg4QGdtYWlsLmNvbSIsImh0dHBzOi8vcWEuaGlib3QudXMvL2p0aSI6ImMyMWM0NzMwLTQyYzctNDIyNi1iMDIyLTViNTAwZDJmYTcxMyIsImh0dHBzOi8vaGlib3QudXMvY2xhaW1zL2p0aSI6ImMyMWM0NzMwLTQyYzctNDIyNi1iMDIyLTViNTAwZDJmYTcxMyIsImh0dHBzOi8vaGlib3QudXMvY2xhaW1zL3RlbmFudCI6IjVmZGI4MTg2ODM3ZDI5MDAwMWZmMjY0YyIsImh0dHBzOi8vaGlib3QudXMvY2xhaW1zL3JvbGVzIjpbIkFETUlOIl0sImlzcyI6Imh0dHBzOi8vcWEtaGlib3QuYXV0aDAuY29tLyIsInN1YiI6ImF1dGgwfDYwOGMyNGYzZDhhZmEwMDA2OGE1NGY0NiIsImF1ZCI6WyJodHRwczovL3FhLmhpYm90LnVzLyIsImh0dHBzOi8vcWEtaGlib3QuYXV0aDAuY29tL3VzZXJpbmZvIl0sImlhdCI6MTYyNzA1ODEzNywiZXhwIjoxNjI3MTQ0NTM3LCJhenAiOiJpc0JOa2d5TGpZM3N6WmVLdkFKQnB5YzVPUmdyWExETSIsInNjb3BlIjoib3BlbmlkIHByb2ZpbGUifQ.GfbzQ6C3CcY4MNiEJcg67lI_SOp6Nq8_UOZqJNNE4OQ7vgJRox83Lim6umMjnTMHp_MLG0wlWNeMLu8ZyC_SnKTDvu9gPU6DM0EAHH0OgkulR2wt5XPjTEGg_ZGxmkv4DxeAXTeur9DqX_F3QVgqf1bythH9LpOEybQbBap1xfdNlr209K5oAXuG8sPoir1vh3hLmjKQAj36DhfVngPUYYWEFMl6RQP6oSqh8VdUSYFldxc4IHEgwAAQE3nG9zjw6vXBBMVzzbVPHJqdF7wlj6quc1sHhPblWlcNn1jDjSWQ9wLsEPyqV3teSA7sQVXrQ5DPpkCXx6YiaLl9T6MEeQ';
+
+  String getAgentId() => '608c24f340a9fb562eadb98a';
 
   @override
   Widget build(BuildContext context) {
@@ -93,12 +97,6 @@ class _MyAppState extends State<MyApp> {
                 channel.bind('status-update', (PusherEvent event) {
                   log("Status Update Event" + event.data.toString());
                 });
-              },
-            ),
-            RaisedButton(
-              child: Text('Trigger Client Typing'),
-              onPressed: () {
-                channel.trigger('client-istyping', {'name': 'Bob'});
               },
             ),
           ],
